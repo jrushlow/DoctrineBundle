@@ -45,8 +45,13 @@ class ConnectionFactory
             $this->initializeTypes();
         }
 
-        if (! isset($params['pdo']) && ! isset($params['charset'])) {
-            $wrapperClass = null;
+        $allowOverrideUrl = $params['override_url'] ?? false;
+        unset($params['override_url']);
+
+        if (! isset($params['pdo']) && (! isset($params['charset']) || $allowOverrideUrl)) {
+            $originalParams = $params;
+            $wrapperClass   = null;
+
             if (isset($params['wrapperClass'])) {
                 if (! is_subclass_of($params['wrapperClass'], Connection::class)) {
                     if (class_exists(DBALException::class)) {
@@ -63,6 +68,24 @@ class ConnectionFactory
             $connection = DriverManager::getConnection($params, $config, $eventManager);
             $params     = $connection->getParams();
             $driver     = $connection->getDriver();
+
+            if ($allowOverrideUrl) {
+                $supportedOverrideParams = [
+                    'dbname',
+                    'host',
+                    'port',
+                    'user',
+                    'password',
+                ];
+
+                foreach ($supportedOverrideParams as $paramKey) {
+                    if (! isset($originalParams[$paramKey])) {
+                        continue;
+                    }
+
+                    $params[$paramKey] = $originalParams[$paramKey];
+                }
+            }
 
             if ($driver instanceof AbstractMySQLDriver) {
                 $params['charset'] = 'utf8mb4';

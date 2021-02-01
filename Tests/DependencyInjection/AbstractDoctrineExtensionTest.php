@@ -113,6 +113,16 @@ abstract class AbstractDoctrineExtensionTest extends TestCase
         $this->assertEquals('5.6.20', $config['serverVersion']);
     }
 
+    public function testDbalLoadUrlOverride(): void
+    {
+        $container = $this->loadContainer('dbal_allow_url_override');
+
+        // doctrine.dbal.mysql_connection
+        $config = $container->getDefinition('doctrine.dbal.default_connection')->getArgument(0);
+
+        $this->assertTrue($config['override_url']);
+    }
+
     public function testDbalLoadSingleMasterSlaveConnection(): void
     {
         $container = $this->loadContainer('dbal_service_single_master_slave_connection');
